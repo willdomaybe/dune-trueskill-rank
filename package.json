@@ -1,0 +1,16 @@
+{
+  "name": "dune-trueskill-rank",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "ts-trueskill": "^5.1.0"
+  }
+}
