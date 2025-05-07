@@ -5,32 +5,33 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-export default async (req, res) => {
+export default async function handler(req, res) {
   try {
     const { data, error } = await supabase
       .from('players')
-      .select('name, mu, sigma')
+      .select('name, mu, sigma, faction')
       .order('mu', { ascending: false });
 
     if (error) {
-      console.error('Error fetching data from Supabase:', error);
-      return res.status(500).json({ error: 'Error fetching data' });
+      console.error('Supabase Error:', error);
+      return res.status(500).json({ error: error.message });
     }
 
-    // Überprüfe, ob Daten vorhanden sind
+    // Wenn keine Spieler, leeres Array zurückgeben
     if (!data || data.length === 0) {
-      return res.status(404).json({ message: 'No players found' });
+      return res.status(200).json([]);
     }
 
-    // Berechne Score = mu - 3*sigma
+    // Berechne Score = mu - 3*sigma und packe faction mit rein
     const ranked = data.map(u => ({
       name: u.name,
-      score: (isNaN(u.mu) || isNaN(u.sigma)) ? 'Invalid' : (u.mu - 3 * u.sigma).toFixed(2)
+      faction: u.faction,
+      score: (u.mu - 3 * u.sigma).toFixed(2)
     }));
 
-    res.status(200).json(ranked);
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    res.status(500).json({ error: 'Unexpected error' });
+    return res.status(200).json(ranked);
+  } catch (err) {
+    console.error('Handler Error:', err);
+    return res.status(500).json({ error: 'Unexpected error' });
   }
-};
+}
