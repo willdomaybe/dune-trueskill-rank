@@ -6,39 +6,25 @@ const SUPABASE_URL = 'https://dckpzxopyjlrathzowas.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRja3B6eG9weWpscmF0aHpvd2FzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1MTk0OTgsImV4cCI6MjA2MjA5NTQ5OH0.REEzUwoZccKXOvxrxYMv8Wz_xkS2FavDouvE4DvJ-O8';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Elements
+// DOM-Elemente
 const authForm      = document.getElementById('authForm');
 const authMsg       = document.getElementById('authMsg');
 const profileForm   = document.getElementById('profileForm');
 const profileStatus = document.getElementById('profileStatus');
 const logoutBtn     = document.getElementById('logoutBtn');
 
-// Login / Signup
+// Anmeldung / Registrierung (Supabase Auth)
 authForm.addEventListener('submit', async e => {
   e.preventDefault();
   const { email, password } = Object.fromEntries(new FormData(authForm));
-  const { error: signErr } = await supabase.auth.signUp({ email, password });
+  const { data: signData, error: signErr } = await supabase.auth.signInWithPassword({ email, password });
   if (signErr) {
     authMsg.innerText = signErr.message;
-    return;
+  } else {
+    // Cookie setzen
+    await fetch('/api/profile-cookie', { method: 'POST' });
+    startApp(); 
   }
-  // Cookie setzen
-  await fetch('/api/profile-cookie', { method: 'POST' });
-  initAfterAuth();
-});
-
-// Login mit Passwort
-authForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const { email, password } = Object.fromEntries(new FormData(authForm));
-  const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
-  if (loginErr) {
-    authMsg.innerText = loginErr.message;
-    return;
-  }
-  // Cookie setzen
-  await fetch('/api/profile-cookie', { method: 'POST' });
-  initAfterAuth();
 });
 
 // Logout
@@ -47,59 +33,73 @@ logoutBtn.addEventListener('click', async () => {
   window.location.reload();
 });
 
-// Zeige Auth-Form / verstecke App
+// Zeigt nur Auth-Form
 function showAuth() {
   ['authSection','profileSection','matchSection','leaderboardSection','sidebar']
     .forEach(id => document.getElementById(id).style.display =
       id === 'authSection' ? 'block' : 'none');
 }
 
-// Nach Auth: Profil erstellen & App initialisieren
-async function initAfterAuth() {
+// App-Start: Prüfe Session & initialisiere
+async function startApp() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return showAuth();
 
-  // Cookie schon gesetzt, proceed:
-  initApp(session.user);
-}
-
-// App initialisieren
-async function initApp(user) {
-  // UI
+  // UI-Sektionen anzeigen
   ['authSection','profileSection','matchSection','leaderboardSection','sidebar']
     .forEach(id => document.getElementById(id).style.display = 'block');
 
-  // Profil-Daten anzeigen
+  // Profil laden (vielleicht existiert noch keins)
   const { data: profile, error: profErr } = await supabase
     .from('profiles')
     .select('player_id, preferred_faction, preferred_victory, games_played, wins, win_rate')
-    .eq('auth_id', user.id)
-    .single();
-  if (profErr) return console.error(profErr);
-  renderSidebar(profile);
+    .eq('auth_id', session.user.id)
+    .maybeSingle();
 
-  // Match-Form
-  initMatchForm(profile.player_id);
+  if (profErr) {
+    console.error('Profile fetch error:', profErr);
+    return;
+  }
 
-  // Leaderboard & History
+  if (!profile) {
+    // Kein Profil vorhanden: zeige Profil-Erstellungsformular
+    document.getElementById('profileSection').style.display = 'block';
+    profileForm.addEventListener('submit', onCreateProfile);
+  } else {
+    // Profil existiert: rendere Sidebar und initialisiere Match-Form
+    document.getElementById('profileSection').style.display = 'none';
+    renderSidebar(profile);
+    initMatchForm(profile.player_id);
+    loadHistory(profile.player_id);
+  }
+
   loadLeaderboard();
-  loadHistory(profile.player_id);
 }
 
-// Profil erstellen (nur wenn separat nötig)
-profileForm.addEventListener('submit', async e => {
+// Handler für Profil-Erstellung
+async function onCreateProfile(e) {
   e.preventDefault();
   const { name, faction, victory } = Object.fromEntries(new FormData(profileForm));
   const res = await fetch('/api/create-profile', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name, preferred_faction: faction, preferred_victory: victory })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name,
+      preferred_faction: faction,
+      preferred_victory: victory
+    })
   });
   const json = await res.json();
-  profileStatus.innerText = json.success ? 'Profil erstellt!' : `Fehler: ${json.error}`;
-});
+  if (json.success) {
+    profileStatus.innerText = 'Profil erstellt!';
+    // Sobald Profil da ist, neustarten
+    startApp();
+  } else {
+    profileStatus.innerText = `Fehler: ${json.error}`;
+  }
+}
 
-// Match-Form initialisieren
+// Initialisiere Match-Formular
 function initMatchForm(playerId) {
   const matchForm = document.getElementById('matchForm');
   matchForm.addEventListener('submit', async e => {
@@ -108,16 +108,19 @@ function initMatchForm(playerId) {
     const players = entries.map(div => ({
       name: div.querySelector('input[name="name"]').value,
       faction: div.querySelector('select[name="faction"]').value,
-      place: parseInt(div.querySelector('input[name="place"]').value,10),
-      victory_condition: div.querySelector('select[name="victory_condition"]')
-        ?.value || null
+      place: parseInt(div.querySelector('input[name="place"]').value, 10),
+      victory_condition: div.querySelector('select[name="victory_condition"]')?.value || null
     }));
-    const r = await fetch('/api/report-match',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+
+    const r = await fetch('/api/report-match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ players })
     });
-    if (!r.ok) return console.error(await r.text());
+    if (!r.ok) {
+      console.error('Fehler beim Eintragen:', await r.text());
+      return;
+    }
     loadLeaderboard();
     loadHistory(playerId);
   });
@@ -125,10 +128,10 @@ function initMatchForm(playerId) {
 
 // Leaderboard laden
 async function loadLeaderboard() {
-  const res = await fetch('/api/leaderboard');
+  const res  = await fetch('/api/leaderboard');
   const data = await res.json();
   document.getElementById('leaderboard').innerHTML = data
-    .map(u=>`<p class="faction-${u.faction.toLowerCase()}">${u.name}: ${u.score}</p>`)
+    .map(u => `<p class="faction-${u.faction.toLowerCase()}">${u.name}: ${u.score}</p>`)
     .join('');
 }
 
@@ -138,12 +141,13 @@ async function loadHistory(playerId) {
     .from('matches')
     .select('played_at,faction,place,victory_condition')
     .eq('player_id', playerId)
-    .order('played_at',{ ascending:false });
+    .order('played_at', { ascending: false });
   if (error) return console.error(error);
   document.getElementById('matchHistory').innerHTML = data
-    .map(m=>`<li>${new Date(m.played_at).toLocaleString()}: ${m.faction}, Platz ${m.place}`+
-      (m.place===1?` (Sieg: ${m.victory_condition})`:'')+
-    `</li>`).join('');
+    .map(m => `<li>${new Date(m.played_at).toLocaleString()}: ${m.faction}, Platz ${m.place}` +
+      (m.place === 1 ? ` (Sieg: ${m.victory_condition})` : '') +
+    `</li>`)
+    .join('');
 }
 
 // Sidebar rendern
@@ -153,12 +157,9 @@ function renderSidebar(p) {
     <p>Siegesbedingung: ${p.preferred_victory}</p>
     <p>Spiele: ${p.games_played}</p>
     <p>Wins: ${p.wins}</p>
-    <p>Winrate: ${(p.win_rate*100).toFixed(1)}%</p>
+    <p>Winrate: ${(p.win_rate * 100).toFixed(1)}%</p>
   `;
 }
 
-// Startup: prüfe Session
-supabase.auth.getSession().then(({ data }) => {
-  if (data.session) initApp(data.session.user);
-  else showAuth();
-});
+// Starte App-Vorgang
+startApp();
