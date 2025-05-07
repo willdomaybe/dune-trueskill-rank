@@ -1,32 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
+// main.js
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+////////////////////////////////////////////////////////////////////////////////
+// 1) Supabase-Client initialisieren – trage hier deine Werte ein:
+const SUPABASE_URL = 'https://<dein‑supabase‑id>.supabase.co';
+const SUPABASE_KEY = '<dein‑anon‑public‑key>';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- AUTHENTIFIKATION ---
+////////////////////////////////////////////////////////////////////////////////
+// 2) AUTHENTIFIKATION
 
-// Elements
 const authForm      = document.getElementById('authForm');
 const authMsg       = document.getElementById('authMsg');
+const logoutBtn     = document.getElementById('logoutBtn');
 const profileForm   = document.getElementById('profileForm');
 const profileStatus = document.getElementById('profileStatus');
-const logoutBtn     = document.getElementById('logoutBtn');
 
-// Form submit: Login / Signup
+// Login / Signup
 authForm.addEventListener('submit', async e => {
   e.preventDefault();
-  const { email, password } = Object.fromEntries(new FormData(authForm));
+  const form = new FormData(authForm);
+  const email    = form.get('email');
+  const password = form.get('password');
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) authMsg.innerText = error.message;
-  else authMsg.innerText = 'Erfolgreich eingeloggt';
-});
-
-// Auth State Change
-supabase.auth.onAuthStateChange((_, session) => {
-  if (session) initApp(session.user);
-  else showAuth();
+  authMsg.innerText = error ? error.message : 'Erfolgreich eingeloggt';
 });
 
 // Logout
@@ -34,63 +31,71 @@ logoutBtn.addEventListener('click', async () => {
   await supabase.auth.signOut();
 });
 
-// Zeigt nur das Auth-Form
+supabase.auth.onAuthStateChange((_, session) => {
+  if (session) {
+    initApp(session.user);
+  } else {
+    showAuth();
+  }
+});
+
+// Zeige nur Auth-Form
 function showAuth() {
-  document.getElementById('authSection').style.display      = 'block';
-  document.getElementById('profileSection').style.display   = 'none';
-  document.getElementById('matchSection').style.display     = 'none';
-  document.getElementById('leaderboardSection').style.display = 'none';
-  document.getElementById('sidebar').style.display          = 'none';
+  document.getElementById('authSection').style.display       = 'block';
+  ['profileSection','matchSection','leaderboardSection','sidebar']
+    .forEach(id => document.getElementById(id).style.display = 'none');
 }
 
-// --- NACH LOGIN: INITIALISIERUNG ---
+////////////////////////////////////////////////////////////////////////////////
+// 3) NACH LOGIN: INIT
 
 async function initApp(user) {
-  // UI-Sektionen einblenden
-  document.getElementById('authSection').style.display      = 'none';
-  document.getElementById('profileSection').style.display   = 'block';
-  document.getElementById('matchSection').style.display     = 'block';
+  document.getElementById('authSection').style.display        = 'none';
+  document.getElementById('profileSection').style.display     = 'block';
+  document.getElementById('matchSection').style.display       = 'block';
   document.getElementById('leaderboardSection').style.display = 'block';
-  document.getElementById('sidebar').style.display          = 'block';
+  document.getElementById('sidebar').style.display            = 'block';
 
-  // Profildaten laden
+  // Profil und History laden
   const { data: profile, error: profErr } = await supabase
     .from('profiles')
     .select('player_id, preferred_faction, preferred_victory, games_played, wins, win_rate')
     .eq('auth_id', user.id)
     .single();
-  if (profErr) {
-    console.error('Profile fetch error:', profErr);
-  } else {
+  if (profErr) console.error('Profile fetch error:', profErr);
+  else {
     renderSidebar(profile);
     initMatchForm(profile.player_id);
   }
 
   loadLeaderboard();
-  loadHistory(profile.player_id);
+  if (profile) loadHistory(profile.player_id);
 }
 
-// --- PROFILE-ERSTELLUNG (falls separat) ---
+////////////////////////////////////////////////////////////////////////////////
+// 4) PROFILE-ERSTELLUNG (falls separat benötigt)
 
 profileForm.addEventListener('submit', async e => {
   e.preventDefault();
-  const { name, email, password, faction, victory } = Object.fromEntries(new FormData(profileForm));
-  const res = await fetch('/api/create-profile', {
+  const form = new FormData(profileForm);
+  const body = {
+    name: form.get('name'),
+    email: form.get('email'),
+    password: form.get('password'),
+    preferred_faction: form.get('faction'),
+    preferred_victory: form.get('victory')
+  };
+  const res  = await fetch('/api/create-profile', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name,
-      email,
-      password,
-      preferred_faction: faction,
-      preferred_victory: victory
-    })
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify(body)
   });
   const json = await res.json();
   profileStatus.innerText = json.success ? 'Profil erstellt!' : `Fehler: ${json.error}`;
 });
 
-// --- MATCH-FORMULAR INIT ---
+////////////////////////////////////////////////////////////////////////////////
+// 5) MATCH-FORMULAR INITIALISIEREN
 
 function initMatchForm(playerId) {
   const matchForm = document.getElementById('matchForm');
@@ -100,18 +105,15 @@ function initMatchForm(playerId) {
     const players = entries.map(div => ({
       name: div.querySelector('input[name="name"]').value,
       faction: div.querySelector('select[name="faction"]').value,
-      place: parseInt(div.querySelector('input[name="place"]').value, 10)
+      place: parseInt(div.querySelector('input[name="place"]').value, 10),
+      // nur bei Platz 1: Siegesbedingung auslesen
+      victory_condition: div.querySelector('select[name="victory_condition"]')
+        ?.value || null
     }));
-
-    // Optional: Victory-Select nur bei Platz 1
-    const winner = players.find(p => p.place === 1);
-    if (winner) {
-      winner.victory_condition = div.querySelector('select[name="victory_condition"]').value;
-    }
 
     const res = await fetch('/api/report-match', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ players })
     });
     if (!res.ok) {
@@ -123,13 +125,13 @@ function initMatchForm(playerId) {
   });
 }
 
-// --- LEADERBOARD LADEN ---
+////////////////////////////////////////////////////////////////////////////////
+// 6) LEADERBOARD LADEN
 
 async function loadLeaderboard() {
   const res  = await fetch('/api/leaderboard');
   const data = await res.json();
-  const container = document.getElementById('leaderboard');
-  container.innerHTML = data
+  document.getElementById('leaderboard').innerHTML = data
     .map(u => {
       const cls = 'faction-' + u.faction.toLowerCase();
       return `<p class="${cls}">${u.name}: ${u.score}</p>`;
@@ -137,7 +139,8 @@ async function loadLeaderboard() {
     .join('');
 }
 
-// --- MATCH-HISTORY LADEN ---
+////////////////////////////////////////////////////////////////////////////////
+// 7) MATCH-HISTORY LADEN
 
 async function loadHistory(playerId) {
   const { data: history, error } = await supabase
@@ -146,15 +149,28 @@ async function loadHistory(playerId) {
     .eq('player_id', playerId)
     .order('played_at', { ascending: false });
   if (error) return console.error('History fetch error:', error);
-  const ul = document.getElementById('matchHistory');
-  ul.innerHTML = history
+  document.getElementById('matchHistory').innerHTML = history
     .map(m => `<li>${new Date(m.played_at).toLocaleString()}: ${m.faction}, Platz ${m.place}` +
-      (m.place === 1 ? ` (Sieg: ${m.victory_condition})` : '') +
+      (m.place===1?` (Sieg: ${m.victory_condition})`:'')+
     `</li>`)
     .join('');
 }
 
-// Initial: versuche Auth-State
+////////////////////////////////////////////////////////////////////////////////
+// Hilfsfunktion: Sidebar rendern
+
+function renderSidebar(profile) {
+  document.getElementById('profileInfo').innerHTML = `
+    <p>Fraktion: ${profile.preferred_faction}</p>
+    <p>Siegesbedingung: ${profile.preferred_victory}</p>
+    <p>Spiele: ${profile.games_played}</p>
+    <p>Wins: ${profile.wins}</p>
+    <p>Winrate: ${(profile.win_rate*100).toFixed(1)} %</p>
+  `;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Starte Auth-Check sofort
 supabase.auth.getSession().then(({ data }) => {
   if (data.session) initApp(data.session.user);
   else showAuth();

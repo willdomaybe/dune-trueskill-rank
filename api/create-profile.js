@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // 1) Registriere den User bei Supabase Auth
+    // 1) SignUp via Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password
@@ -26,13 +26,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: authError.message });
     }
 
-    // 2) Erstelle den Spieler-Eintrag
+    // 2) Spieler anlegen mit Fraktion
     const { data: player, error: playerError } = await supabase
       .from('players')
-      .insert({
-        name,
-        faction: preferred_faction
-      })
+      .insert({ name, faction: preferred_faction })
       .select('id')
       .single();
     if (playerError) {
@@ -40,7 +37,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: playerError.message });
     }
 
-    // 3) Erstelle das Profile mit Verknüpfung auf auth.user.id
+    // 3) Profil anlegen mit auth_id
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
