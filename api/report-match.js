@@ -7,9 +7,7 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).end();
 
   try {
     const { players: playersInput } = req.body;
@@ -18,26 +16,18 @@ export default async function handler(req, res) {
     }
 
     const profiles = [];
-
-    // Spieler anlegen/holen und Match speichern
     for (const p of playersInput) {
-      // Spieler laden, falls vorhanden
       const { data: existing, error: fetchErr } = await supabase
         .from('players')
         .select('id, mu, sigma, faction')
         .eq('name', p.name)
         .maybeSingle();
-
-      if (fetchErr) {
-        console.error('Fetch player error:', fetchErr);
-        return res.status(500).json({ error: fetchErr.message });
-      }
+      if (fetchErr) throw fetchErr;
 
       let id, mu, sigma, faction;
       if (existing) {
         ({ id, mu, sigma, faction } = existing);
       } else {
-        // neuen Spieler mit Default-Werten anlegen
         const { data: newP, error: insertErr } = await supabase
           .from('players')
           .insert({
@@ -48,17 +38,12 @@ export default async function handler(req, res) {
           })
           .select('id, mu, sigma, faction')
           .single();
-
-        if (insertErr) {
-          console.error('Insert player error:', insertErr);
-          return res.status(500).json({ error: insertErr.message });
-        }
+        if (insertErr) throw insertErr;
         ({ id, mu, sigma, faction } = newP);
       }
 
       profiles.push({ id, mu, sigma, place: p.place, faction });
 
-      // Match speichern
       const { error: matchErr } = await supabase
         .from('matches')
         .insert({
@@ -66,25 +51,13 @@ export default async function handler(req, res) {
           faction: p.faction,
           place: p.place
         });
-
-      if (matchErr) {
-        console.error('Insert match error:', matchErr);
-        return res.status(500).json({ error: matchErr.message });
-      }
+      if (matchErr) throw matchErr;
     }
 
-    // TrueSkill-Rating berechnen
     const teams = profiles.map(x => [{ mu: x.mu, sigma: x.sigma }]);
     const ranks = profiles.map(x => x.place);
-    let newRatings;
-    try {
-      newRatings = rate(teams, ranks);
-    } catch (tsErr) {
-      console.error('TrueSkill error:', tsErr);
-      return res.status(500).json({ error: 'TrueSkill calculation failed' });
-    }
+    const newRatings = rate(teams, ranks);
 
-    // Neue Werte speichern
     for (let i = 0; i < profiles.length; i++) {
       const { id } = profiles[i];
       const { mu: newMu, sigma: newSigma } = newRatings[i][0];
@@ -92,16 +65,16 @@ export default async function handler(req, res) {
         .from('players')
         .update({ mu: newMu, sigma: newSigma })
         .eq('id', id);
+      if (updateErr) throw updateErr;
 
-      if (updateErr) {
-        console.error('Update player error:', updateErr);
-        return res.status(500).json({ error: updateErr.message });
-      }
+      // games_played inkrementieren
+      const { error: rpcErr } = await supabase.rpc('increment_games_played', { pid: id });
+      if (rpcErr) throw rpcErr;
     }
 
-    return res.status(200).json({ success: true });
+    res.status(200).json({ success: true });
   } catch (err) {
-    console.error('Unhandled handler error:', err);
-    return res.status(500).json({ error: err.message || 'Unknown error' });
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Server error' });
   }
 }

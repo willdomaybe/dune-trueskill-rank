@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Dune Ranking</title>
+  <title>Dune Spice Wars Ranked</title>
   <style>
     .faction-atreides  { color: green; }
     .faction-smuggler  { color: blue; }
@@ -11,106 +11,85 @@
     .faction-harkonnen { color: red; }
     .faction-corrino   { color: gray; }
     .faction-fremen    { color: yellow; }
-
     body { font-family: sans-serif; padding: 2rem; }
-    form, #leaderboard { margin-bottom: 2rem; }
-    .player-entry { margin-bottom: 1rem; }
-    label { display: block; margin-bottom: .5rem; }
-    select, input { margin-left: .5rem; }
+    .player-entry, form, #leaderboard { margin-bottom: 1.5rem; }
+    label { display: block; margin: .5rem 0; }
   </style>
 </head>
 <body>
   <h1>Dune Spice Wars Ranked</h1>
 
+  <!-- Profil anlegen -->
+  <h2>Spielerprofil erstellen</h2>
+  <form id="profileForm">
+    <label>Name: <input name="name" required></label>
+    <label>Bevorzugte Fraktion:
+      <select name="faction" required>
+        <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+        <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+        <option>Fremen</option>
+      </select>
+    </label>
+    <label>Bevorzugte Siegesbedingung:
+      <select name="victory" required>
+        <option>Vorherrschaft</option><option>Hegemonie</option>
+        <option>Politisch</option><option>Wirtschaftlich</option>
+        <option>Attentate</option>
+      </select>
+    </label>
+    <button type="submit">Profil erstellen</button>
+    <div id="profileStatus"></div>
+  </form>
+
+  <!-- Match eintragen -->
+  <h2>Match eintragen</h2>
   <form id="matchForm">
     <div id="players">
-      <!-- Vier Spieler‑Blöcke -->
+      <!-- vier Blöcke -->
       <div class="player-entry">
-        <label>Spieler 1 Name:
-          <input type="text" name="name" required />
-        </label>
+        <label>Spieler 1 Name: <input name="name" required></label>
         <label>Fraktion:
           <select name="faction" required>
-            <option value="">--Bitte wählen--</option>
-            <option value="Atreides">Atreides</option>
-            <option value="Smuggler">Smuggler</option>
-            <option value="Ecaz">Ecaz</option>
-            <option value="Vernius">Vernius</option>
-            <option value="Harkonnen">Harkonnen</option>
-            <option value="Corrino">Corrino</option>
-            <option value="Fremen">Fremen</option>
+            <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+            <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+            <option>Fremen</option>
           </select>
         </label>
-        <label>Platz (1–4):
-          <input type="number" name="place" min="1" max="4" required />
-        </label>
+        <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required></label>
       </div>
-      <!-- ... 3 weitere Blöcke analog ... -->
+      <!-- Kopiere 3× für Spieler 2–4 -->
       <div class="player-entry">
-        <label>Spieler 2 Name:
-          <input type="text" name="name" required />
-        </label>
-        <label>Fraktion:
-          <select name="faction" required>
-            <option value="">--Bitte wählen--</option>
-            <option value="Atreides">Atreides</option>
-            <option value="Smuggler">Smuggler</option>
-            <option value="Ecaz">Ecaz</option>
-            <option value="Vernius">Vernius</option>
-            <option value="Harkonnen">Harkonnen</option>
-            <option value="Corrino">Corrino</option>
-            <option value="Fremen">Fremen</option>
-          </select>
-        </label>
-        <label>Platz (1–4):
-          <input type="number" name="place" min="1" max="4" required />
-        </label>
+        <label>Spieler 2 Name: <input name="name" required></label>
+        <label>Fraktion: <select name="faction" required>
+          <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+          <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+          <option>Fremen</option>
+        </select></label>
+        <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required></label>
       </div>
       <div class="player-entry">
-        <label>Spieler 3 Name:
-          <input type="text" name="name" required />
-        </label>
-        <label>Fraktion:
-          <select name="faction" required>
-            <option value="">--Bitte wählen--</option>
-            <option value="Atreides">Atreides</option>
-            <option value="Smuggler">Smuggler</option>
-            <option value="Ecaz">Ecaz</option>
-            <option value="Vernius">Vernius</option>
-            <option value="Harkonnen">Harkonnen</option>
-            <option value="Corrino">Corrino</option>
-            <option value="Fremen">Fremen</option>
-          </select>
-        </label>
-        <label>Platz (1–4):
-          <input type="number" name="place" min="1" max="4" required />
-        </label>
+        <label>Spieler 3 Name: <input name="name" required></label>
+        <label>Fraktion: <select name="faction" required>
+          <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+          <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+          <option>Fremen</option>
+        </select></label>
+        <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required></label>
       </div>
       <div class="player-entry">
-        <label>Spieler 4 Name:
-          <input type="text" name="name" required />
-        </label>
-        <label>Fraktion:
-          <select name="faction" required>
-            <option value="">--Bitte wählen--</option>
-            <option value="Atreides">Atreides</option>
-            <option value="Smuggler">Smuggler</option>
-            <option value="Ecaz">Ecaz</option>
-            <option value="Vernius">Vernius</option>
-            <option value="Harkonnen">Harkonnen</option>
-            <option value="Corrino">Corrino</option>
-            <option value="Fremen">Fremen</option>
-          </select>
-        </label>
-        <label>Platz (1–4):
-          <input type="number" name="place" min="1" max="4" required />
-        </label>
+        <label>Spieler 4 Name: <input name="name" required></label>
+        <label>Fraktion: <select name="faction" required>
+          <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+          <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+          <option>Fremen</option>
+        </select></label>
+        <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required></label>
       </div>
     </div>
-
     <button type="submit">Match eintragen</button>
   </form>
 
+  <!-- Leaderboard -->
   <h2>Leaderboard</h2>
   <div id="leaderboard"></div>
 
