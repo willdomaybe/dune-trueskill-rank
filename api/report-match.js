@@ -19,8 +19,9 @@ export default async function handler(req, res) {
 
     const profiles = [];
 
-    // 1) Spieler anlegen oder laden, Match in DB speichern
+    // Spieler anlegen/holen und Match speichern
     for (const p of playersInput) {
+      // Spieler laden, falls vorhanden
       const { data: existing, error: fetchErr } = await supabase
         .from('players')
         .select('id, mu, sigma, faction')
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 2) TrueSkill-Rating berechnen
+    // TrueSkill-Rating berechnen
     const teams = profiles.map(x => [{ mu: x.mu, sigma: x.sigma }]);
     const ranks = profiles.map(x => x.place);
     let newRatings;
@@ -83,7 +84,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'TrueSkill calculation failed' });
     }
 
-    // 3) Neue Werte speichern
+    // Neue Werte speichern
     for (let i = 0; i < profiles.length; i++) {
       const { id } = profiles[i];
       const { mu: newMu, sigma: newSigma } = newRatings[i][0];
