@@ -19,37 +19,33 @@ export default async function handler(req, res) {
     for (const p of playersInput) {
       const { data: existing, error: fetchErr } = await supabase
         .from('players')
-        .select('id, mu, sigma, faction')
+        .select('id, mu, sigma')
         .eq('name', p.name)
         .maybeSingle();
       if (fetchErr) throw fetchErr;
 
-      let id, mu, sigma, faction;
+      let id, mu, sigma;
       if (existing) {
-        ({ id, mu, sigma, faction } = existing);
+        ({ id, mu, sigma } = existing);
       } else {
         const { data: newP, error: insertErr } = await supabase
           .from('players')
-          .insert({
-            name: p.name,
-            mu: 25,
-            sigma: 8.333,
-            faction: p.faction
-          })
-          .select('id, mu, sigma, faction')
+          .insert({ name: p.name, mu: 25, sigma: 8.333, faction: p.faction })
+          .select('id, mu, sigma')
           .single();
         if (insertErr) throw insertErr;
-        ({ id, mu, sigma, faction } = newP);
+        ({ id, mu, sigma } = newP);
       }
 
-      profiles.push({ id, mu, sigma, place: p.place, faction });
+      profiles.push({ id, mu, sigma, place: p.place });
 
       const { error: matchErr } = await supabase
         .from('matches')
         .insert({
           player_id: id,
           faction: p.faction,
-          place: p.place
+          place: p.place,
+          victory_condition: p.victory_condition || null
         });
       if (matchErr) throw matchErr;
     }
@@ -59,22 +55,23 @@ export default async function handler(req, res) {
     const newRatings = rate(teams, ranks);
 
     for (let i = 0; i < profiles.length; i++) {
-      const { id } = profiles[i];
+      const { id, place } = profiles[i];
       const { mu: newMu, sigma: newSigma } = newRatings[i][0];
-      const { error: updateErr } = await supabase
+
+      await supabase
         .from('players')
         .update({ mu: newMu, sigma: newSigma })
         .eq('id', id);
-      if (updateErr) throw updateErr;
 
-      // games_played inkrementieren
-      const { error: rpcErr } = await supabase.rpc('increment_games_played', { pid: id });
-      if (rpcErr) throw rpcErr;
+      await supabase.rpc('increment_games_played', { pid: id });
+      if (place === 1) {
+        await supabase.rpc('increment_wins', { pid: id });
+      }
     }
 
     res.status(200).json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message || 'Server error' });
+    console.error('report-match error:', err);
+    res.status(500).json({ error: err.message });
   }
 }

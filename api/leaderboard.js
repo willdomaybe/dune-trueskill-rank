@@ -11,9 +11,7 @@ export default async function handler(req, res) {
       .from('players')
       .select('name, mu, sigma, faction')
       .order('mu', { ascending: false });
-
     if (error) throw error;
-    if (!data) return res.status(200).json([]);
 
     const ranked = data.map(u => ({
       name: u.name,
@@ -23,7 +21,7 @@ export default async function handler(req, res) {
 
     res.status(200).json(ranked);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message || 'Unexpected error' });
+    console.error('leaderboard error:', err);
+    res.status(500).json({ error: err.message });
   }
 }

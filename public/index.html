@@ -4,17 +4,14 @@
   <meta charset="UTF-8" />
   <title>Dune Spice Wars Ranked</title>
   <style>
-    /* Fraktions-Farben */
-    .faction-atreides  { color: green; }
-    .faction-smuggler  { color: blue; }
-    .faction-ecaz      { color: pink; }
-    .faction-vernius   { color: purple; }
-    .faction-harkonnen { color: red; }
-    .faction-corrino   { color: gray; }
-    .faction-fremen    { color: yellow; }
-
-    /* Layout */
-    body { font-family: sans-serif; display: flex; margin: 0; padding: 1rem; }
+    .faction-atreides { color: green; }
+    .faction-smuggler { color: blue; }
+    .faction-ecaz     { color: pink; }
+    .faction-vernius  { color: purple; }
+    .faction-harkonnen{ color: red; }
+    .faction-corrino  { color: gray; }
+    .faction-fremen   { color: yellow; }
+    body { font-family: sans-serif; display: flex; padding: 1rem; }
     aside#sidebar { width: 250px; margin-right: 2rem; display: none; }
     main { flex: 1; }
     section { margin-bottom: 2rem; }
@@ -23,7 +20,6 @@
   </style>
 </head>
 <body>
-  <!-- Sidebar mit Profil & History -->
   <aside id="sidebar">
     <h3>Mein Profil</h3>
     <div id="profileInfo"></div>
@@ -31,20 +27,16 @@
     <ul id="matchHistory"></ul>
     <button id="logoutBtn">Logout</button>
   </aside>
-
   <main>
-    <!-- 1) Auth-Section -->
     <section id="authSection">
       <h2>Login / Signup</h2>
       <form id="authForm">
-        <label>Email:    <input type="email"    name="email"    required /></label>
-        <label>Passwort:<input type="password" name="password" required /></label>
+        <label>Email: <input type="email" name="email" required /></label>
+        <label>Passwort: <input type="password" name="password" required /></label>
         <button type="submit">Login / Signup</button>
       </form>
       <div id="authMsg"></div>
     </section>
-
-    <!-- 2) Profil-Section (optional wenn du Profil separat erstellst) -->
     <section id="profileSection" style="display:none">
       <h2>Profil erstellen</h2>
       <form id="profileForm">
@@ -67,15 +59,13 @@
       </form>
       <div id="profileStatus"></div>
     </section>
-
-    <!-- 3) Match eintragen -->
     <section id="matchSection" style="display:none">
       <h2>Match eintragen</h2>
       <form id="matchForm">
         <div id="players">
-          <!-- Vier Spieler-Einträge -->
+          <!-- Vier Mal: -->
           <div class="player-entry">
-            <label>Spieler 1 Name: <input name="name" required /></label>
+            <label>Name: <input name="name" required /></label>
             <label>Fraktion:
               <select name="faction" required>
                 <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
@@ -83,7 +73,7 @@
                 <option>Fremen</option>
               </select>
             </label>
-            <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required /></label>
+            <label>Platz: <input name="place" type="number" min="1" max="4" required /></label>
             <label style="display:none">
               Siegesbedingung:
               <select name="victory_condition">
@@ -93,77 +83,16 @@
               </select>
             </label>
           </div>
-          <!-- Kopiere den Block oben drei weitere Male für Spieler 2–4 -->
-          <div class="player-entry">
-            <label>Spieler 2 Name: <input name="name" required /></label>
-            <label>Fraktion:
-              <select name="faction" required>
-                <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
-                <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
-                <option>Fremen</option>
-              </select>
-            </label>
-            <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required /></label>
-            <label style="display:none">
-              Siegesbedingung:
-              <select name="victory_condition">
-                <option>Vorherrschaft</option><option>Hegemonie</option>
-                <option>Politisch</option><option>Wirtschaftlich</option>
-                <option>Attentate</option>
-              </select>
-            </label>
-          </div>
-          <div class="player-entry">
-            <label>Spieler 3 Name: <input name="name" required /></label>
-            <label>Fraktion:
-              <select name="faction" required>
-                <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
-                <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
-                <option>Fremen</option>
-              </select>
-            </label>
-            <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required /></label>
-            <label style="display:none">
-              Siegesbedingung:
-              <select name="victory_condition">
-                <option>Vorherrschaft</option><option>Hegemonie</option>
-                <option>Politisch</option><option>Wirtschaftlich</option>
-                <option>Attentate</option>
-              </select>
-            </label>
-          </div>
-          <div class="player-entry">
-            <label>Spieler 4 Name: <input name="name" required /></label>
-            <label>Fraktion:
-              <select name="faction" required>
-                <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
-                <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
-                <option>Fremen</option>
-              </select>
-            </label>
-            <label>Platz (1–4): <input name="place" type="number" min="1" max="4" required /></label>
-            <label style="display:none">
-              Siegesbedingung:
-              <select name="victory_condition">
-                <option>Vorherrschaft</option><option>Hegemonie</option>
-                <option>Politisch</option><option>Wirtschaftlich</option>
-                <option>Attentate</option>
-              </select>
-            </label>
-          </div>
+          <!-- kopiere 3× -->
         </div>
         <button type="submit">Match eintragen</button>
       </form>
     </section>
-
-    <!-- 4) Leaderboard -->
     <section id="leaderboardSection" style="display:none">
       <h2>Leaderboard</h2>
       <div id="leaderboard"></div>
     </section>
   </main>
-
-  <!-- Dein main.js als ES-Modul -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
