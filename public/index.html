@@ -4,19 +4,21 @@
   <meta charset="UTF-8" />
   <title>Dune Spice Wars Ranked</title>
   <style>
-    .faction-atreides { color: green; }
-    .faction-smuggler { color: blue; }
-    .faction-ecaz     { color: pink; }
-    .faction-vernius  { color: purple; }
-    .faction-harkonnen{ color: red; }
-    .faction-corrino  { color: gray; }
-    .faction-fremen   { color: yellow; }
+    .hidden { display: none; }
+    .faction-atreides  { color: green; }
+    .faction-smuggler  { color: blue; }
+    .faction-ecaz      { color: pink; }
+    .faction-vernius   { color: purple; }
+    .faction-harkonnen { color: red; }
+    .faction-corrino   { color: gray; }
+    .faction-fremen    { color: yellow; }
     body { font-family: sans-serif; display: flex; padding: 1rem; }
     aside#sidebar { width: 250px; margin-right: 2rem; display: none; }
     main { flex: 1; }
     section { margin-bottom: 2rem; }
     .player-entry { margin-bottom: 1rem; }
     label { display: block; margin: .5rem 0; }
+    #authTabs button { margin-right: .5rem; }
   </style>
 </head>
 <body>
@@ -28,16 +30,30 @@
     <button id="logoutBtn">Logout</button>
   </aside>
   <main>
+    <!-- Auth Tabs -->
+    <div id="authTabs">
+      <button id="tab-login">Login</button>
+      <button id="tab-signup">Sign-Up</button>
+    </div>
+
+    <!-- Login Form -->
     <section id="authSection">
-      <h2>Login / Signup</h2>
-      <form id="authForm">
-        <label>Email: <input type="email" name="email" required /></label>
-        <label>Passwort: <input type="password" name="password" required /></label>
-        <button type="submit">Login / Signup</button>
+      <form id="loginForm">
+        <label>Email: <input type="email" id="loginEmail" required /></label>
+        <label>Passwort: <input type="password" id="loginPassword" required /></label>
+        <button type="submit">Einloggen</button>
+      </form>
+      <!-- Signup Form -->
+      <form id="signupForm" class="hidden">
+        <label>Email: <input type="email" id="signupEmail" required /></label>
+        <label>Passwort: <input type="password" id="signupPassword" required /></label>
+        <button type="submit">Registrieren</button>
       </form>
       <div id="authMsg"></div>
     </section>
-    <section id="profileSection" style="display:none">
+
+    <!-- Profil erstellen (wird bei Erst-Login automatisch angezeigt) -->
+    <section id="profileSection" class="hidden">
       <h2>Profil erstellen</h2>
       <form id="profileForm">
         <label>Name: <input name="name" required /></label>
@@ -59,11 +75,13 @@
       </form>
       <div id="profileStatus"></div>
     </section>
-    <section id="matchSection" style="display:none">
+
+    <!-- Match eintragen -->
+    <section id="matchSection" class="hidden">
       <h2>Match eintragen</h2>
       <form id="matchForm">
         <div id="players">
-          <!-- Vier Mal: Spielerfelder für die 4 Spieler -->
+          <!-- Vier Spielerfelder -->
           <div class="player-entry">
             <label>Name: <input name="name" required /></label>
             <label>Fraktion:
@@ -83,7 +101,6 @@
               </select>
             </label>
           </div>
-          <!-- Spielerfelder 2 bis 4: -->
           <div class="player-entry">
             <label>Name: <input name="name" required /></label>
             <label>Fraktion:
@@ -145,11 +162,14 @@
         <button type="submit">Match eintragen</button>
       </form>
     </section>
-    <section id="leaderboardSection" style="display:none">
+
+    <!-- Leaderboard -->
+    <section id="leaderboardSection" class="hidden">
       <h2>Leaderboard</h2>
       <div id="leaderboard"></div>
     </section>
   </main>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>
