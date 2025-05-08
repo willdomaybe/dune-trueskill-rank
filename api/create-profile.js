@@ -11,25 +11,25 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Only POST allowed' });
   }
 
-  // Aus dem Body: user_id, name, preferred_faction, preferred_victory
+  // Erwartete Felder im Body
   const { user_id, name, preferred_faction, preferred_victory } = req.body;
   if (!user_id || !name || !preferred_faction || !preferred_victory) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
-    // 1) Spieler anlegen (players-Tabelle)
+    // 1) Spieler anlegen oder holen (Upsert über name)
     const { data: player, error: pErr } = await supabase
       .from('players')
       .upsert(
         { name, faction: preferred_faction },
-        { onConflict: ['name'], ignoreDuplicates: false }
+        { onConflict: ['name'], returning: 'representation' }
       )
       .select('id')
       .single();
     if (pErr) throw pErr;
 
-    // 2) Profil anlegen (profiles-Tabelle)
+    // 2) Profil anlegen oder aktualisieren (Upsert über auth_id)
     const { error: profErr } = await supabase
       .from('profiles')
       .upsert(
@@ -39,13 +39,13 @@ export default async function handler(req, res) {
           preferred_faction,
           preferred_victory
         },
-        { onConflict: ['auth_id'], ignoreDuplicates: false }
+        { onConflict: ['auth_id'] }
       );
     if (profErr) throw profErr;
 
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error('create-profile error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message || 'Server error' });
   }
 }
