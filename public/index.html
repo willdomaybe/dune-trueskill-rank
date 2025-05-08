@@ -63,7 +63,7 @@
       <h2>Match eintragen</h2>
       <form id="matchForm">
         <div id="players">
-          <!-- Vier Mal: -->
+          <!-- Vier Mal: Spielerfelder für die 4 Spieler -->
           <div class="player-entry">
             <label>Name: <input name="name" required /></label>
             <label>Fraktion:
@@ -83,7 +83,64 @@
               </select>
             </label>
           </div>
-          <!-- kopiere 3× -->
+          <!-- Spielerfelder 2 bis 4: -->
+          <div class="player-entry">
+            <label>Name: <input name="name" required /></label>
+            <label>Fraktion:
+              <select name="faction" required>
+                <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+                <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+                <option>Fremen</option>
+              </select>
+            </label>
+            <label>Platz: <input name="place" type="number" min="1" max="4" required /></label>
+            <label style="display:none">
+              Siegesbedingung:
+              <select name="victory_condition">
+                <option>Vorherrschaft</option><option>Hegemonie</option>
+                <option>Politisch</option><option>Wirtschaftlich</option>
+                <option>Attentate</option>
+              </select>
+            </label>
+          </div>
+          <div class="player-entry">
+            <label>Name: <input name="name" required /></label>
+            <label>Fraktion:
+              <select name="faction" required>
+                <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+                <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+                <option>Fremen</option>
+              </select>
+            </label>
+            <label>Platz: <input name="place" type="number" min="1" max="4" required /></label>
+            <label style="display:none">
+              Siegesbedingung:
+              <select name="victory_condition">
+                <option>Vorherrschaft</option><option>Hegemonie</option>
+                <option>Politisch</option><option>Wirtschaftlich</option>
+                <option>Attentate</option>
+              </select>
+            </label>
+          </div>
+          <div class="player-entry">
+            <label>Name: <input name="name" required /></label>
+            <label>Fraktion:
+              <select name="faction" required>
+                <option>Atreides</option><option>Smuggler</option><option>Ecaz</option>
+                <option>Vernius</option><option>Harkonnen</option><option>Corrino</option>
+                <option>Fremen</option>
+              </select>
+            </label>
+            <label>Platz: <input name="place" type="number" min="1" max="4" required /></label>
+            <label style="display:none">
+              Siegesbedingung:
+              <select name="victory_condition">
+                <option>Vorherrschaft</option><option>Hegemonie</option>
+                <option>Politisch</option><option>Wirtschaftlich</option>
+                <option>Attentate</option>
+              </select>
+            </label>
+          </div>
         </div>
         <button type="submit">Match eintragen</button>
       </form>
